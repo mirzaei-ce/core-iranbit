@@ -1,0 +1,92 @@
+#!/sbin/runscript
+
+# backward compatibility for existing gentoo layout 
+#
+if [ -d "/var/lib/iranbit/.iranbit" ]; then
+	IRANBITD_DEFAULT_DATADIR="/var/lib/iranbit/.iranbit"
+else
+	IRANBITD_DEFAULT_DATADIR="/var/lib/iranbitd"
+fi
+
+IRANBITD_CONFIGFILE=${IRANBITD_CONFIGFILE:-/etc/iranbit/iranbit.conf}
+IRANBITD_PIDDIR=${IRANBITD_PIDDIR:-/var/run/iranbitd}
+IRANBITD_PIDFILE=${IRANBITD_PIDFILE:-${IRANBITD_PIDDIR}/iranbitd.pid}
+IRANBITD_DATADIR=${IRANBITD_DATADIR:-${IRANBITD_DEFAULT_DATADIR}}
+IRANBITD_USER=${IRANBITD_USER:-${IRANBIT_USER:-iranbit}}
+IRANBITD_GROUP=${IRANBITD_GROUP:-iranbit}
+IRANBITD_BIN=${IRANBITD_BIN:-/usr/bin/iranbitd}
+IRANBITD_NICE=${IRANBITD_NICE:-${NICELEVEL:-0}}
+IRANBITD_OPTS="${IRANBITD_OPTS:-${IRANBIT_OPTS}}"
+
+name="Iranbit Core Daemon"
+description="Iranbit cryptocurrency P2P network daemon"
+
+command="/usr/bin/iranbitd"
+command_args="-pid=\"${IRANBITD_PIDFILE}\" \
+		-conf=\"${IRANBITD_CONFIGFILE}\" \
+		-datadir=\"${IRANBITD_DATADIR}\" \
+		-daemon \
+		${IRANBITD_OPTS}"
+
+required_files="${IRANBITD_CONFIGFILE}"
+start_stop_daemon_args="-u ${IRANBITD_USER} \
+			-N ${IRANBITD_NICE} -w 2000"
+pidfile="${IRANBITD_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${IRANBITD_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${IRANBITD_USER}:${IRANBITD_GROUP}" \
+	"${IRANBITD_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${IRANBITD_USER}:${IRANBITD_GROUP}" \
+	"${IRANBITD_PIDDIR}"
+
+	checkpath -f \
+	-o ${IRANBITD_USER}:${IRANBITD_GROUP} \
+	-m 0660 \
+	${IRANBITD_CONFIGFILE}
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if ! grep -qs '^rpcpassword=' "${IRANBITD_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run iranbitd."
+		eerror "The setting must appear in ${IRANBITD_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following"
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is also recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"Iranbit Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}

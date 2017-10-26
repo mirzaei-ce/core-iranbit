@@ -1,0 +1,12 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Iranbit
+Comment=Iranbit P2P Cryptocurrency
+Comment[fr]=Iranbit, monnaie virtuelle cryptographique pair à pair
+Comment[tr]=Iranbit, eşten eşe kriptografik sanal para birimi
+Exec=iranbit-qt %u
+Terminal=false
+Type=Application
+Icon=iranbit128
+MimeType=x-scheme-handler/iranbit;
+Categories=Office;Finance;

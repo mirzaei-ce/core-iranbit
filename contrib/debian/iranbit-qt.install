@@ -1,0 +1,6 @@
+usr/local/bin/iranbit-qt usr/bin
+share/pixmaps/iranbit32.xpm usr/share/pixmaps
+share/pixmaps/iranbit16.xpm usr/share/pixmaps
+share/pixmaps/iranbit128.png usr/share/pixmaps
+debian/iranbit-qt.desktop usr/share/applications
+debian/iranbit-qt.protocol usr/share/kde4/services/
